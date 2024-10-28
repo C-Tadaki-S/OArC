@@ -61,7 +61,7 @@ mfloat floatsisf (mint i){
 //Converte um ponto flutuante para a representação inteira
 mint fixsfsi (mfloat a){
     uint32_t mantissa = (a & SINGLE_MANTISSA_MASK);
-    uint32_t expoente = (a & SINGLE_EXP_MASK) >> SINGLE_MANTISSA;
+    int32_t expoente = (a & SINGLE_EXP_MASK) >> SINGLE_MANTISSA;
     uint32_t sinal = (a & SINGLE_SIGN_MASK) >> (SINGLE_BITS - 1);
     
     // Hidden bit
@@ -77,7 +77,7 @@ mint fixsfsi (mfloat a){
     int32_t valor;
     
     // Shifts para multiplicação da mantissa
-    if(expoente >> (SINGLE_MANTISSA - 1))
+    if(expoente  < 0)
         valor = 0;
     else if (expoente <= SINGLE_MANTISSA)
         valor = mantissa >> (SINGLE_MANTISSA - expoente);
@@ -86,7 +86,6 @@ mint fixsfsi (mfloat a){
     
     if (sinal)
         valor *= -1;
-
     return valor;
 }
 
@@ -129,12 +128,12 @@ mfloat addsf3 (mfloat a, mfloat b){
 
     //Shiftar mantissa do número menor
     //Expoente preservado é o maior
-    if (exp_diff >= 0){
+    if (shift_exp >= 0){
         expoente_result = expoente_a + SINGLE_BIAS;
         mantissa_2 = mantissa_b >> shift_exp;
     } else {
         expoente_result = expoente_b + SINGLE_BIAS;
-        mantissa_1 = mantissa_a >> (-shift_exp);
+        mantissa_1 = mantissa_a >> -shift_exp;
     }
 
     // Operação real entre os módulos dos operandos
@@ -165,13 +164,11 @@ mfloat addsf3 (mfloat a, mfloat b){
     }
 
     //Contagem dos leading zeros e normalização
-    int32_t leading_zeros = SINGLE_MANTISSA;
-    while ((mantissa_result & (1 << leading_zeros)) == 0 && mantissa_result != 0) {
-        leading_zeros--; 
+    int32_t leading_zeros = 0;
+    while ((mantissa_result & (1 << (SINGLE_MANTISSA - leading_zeros))) == 0 && mantissa_result != 0) {
+        leading_zeros += 1; 
     }
     
-    leading_zeros = SINGLE_MANTISSA - leading_zeros;
-
     if (mantissa_result == 0)
         expoente_result = 0;
     else 
@@ -231,12 +228,12 @@ mfloat subsf3 (mfloat a, mfloat b){
 
     //Shiftar mantissa do número menor
     //Expoente preservado é o maior
-    if (exp_diff >= 0){
+    if (shift_exp >= 0){
         expoente_result = expoente_a + SINGLE_BIAS;
         mantissa_2 = mantissa_b >> shift_exp;
     } else {
         expoente_result = expoente_b + SINGLE_BIAS;
-        mantissa_1 = mantissa_a >> (-shift_exp);
+        mantissa_1 = mantissa_a >> -shift_exp;
     }
 
     // Operação real entre os módulos dos operandos
@@ -267,13 +264,11 @@ mfloat subsf3 (mfloat a, mfloat b){
     }
 
     //Contagem dos leading zeros e normalização
-    int32_t leading_zeros = SINGLE_MANTISSA;
-    while ((mantissa_result & (1 << leading_zeros)) == 0 && mantissa_result != 0) {
-        leading_zeros--; 
+    int32_t leading_zeros = 0;
+    while ((mantissa_result & (1 << (SINGLE_MANTISSA - leading_zeros))) == 0 && mantissa_result != 0) {
+        leading_zeros += 1; 
     }
     
-    leading_zeros = SINGLE_MANTISSA - leading_zeros;
-
     if (mantissa_result == 0)
         expoente_result = 0;
     else 
@@ -295,6 +290,6 @@ mfloat subsf3 (mfloat a, mfloat b){
     sinal_result = sinal_result << (SINGLE_MANTISSA + SINGLE_EXPOENT);
     expoente_result = expoente_result << SINGLE_MANTISSA;
     mfloat result = (sinal_result | expoente_result | mantissa_result);
-    
+
     return result;
 }
